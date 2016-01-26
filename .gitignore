@@ -1,0 +1,17 @@
+/.bundle/
+/.yardoc
+/.idea
+/Gemfile.lock
+/_yardoc/
+/coverage/
+/doc/
+/pkg/
+/spec/reports/
+/tmp/
+/spec/orange_push_sms_spec.rb
+*.bundle
+*.so
+*.o
+*.a
+*.gem
+mkmf.log
