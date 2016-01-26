@@ -18,6 +18,17 @@ Or install it yourself as:
 
     $ gem install orange_push_sms
 
+## Configuration
+
+In config/initializers create a file orange_push_sms.rb:
+
+```ruby
+OrangePushSMS.configure do |config|
+	config.login = 'LOGIN'
+	config.pass  = 'PASSWORD'
+end
+```
+
 ## Usage
 
 To send an SMS to single recipient use:
