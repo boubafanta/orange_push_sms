@@ -1,12 +1,12 @@
 module OrangePushSMS
   class Configuration
 
-    attr_accessor :login
-    attr_accessor :pass
+    attr_accessor :user, :token, :secret
 
     def initialize
-      @login = ''
-      @pass  = ''
+      @user   = ''
+      @token  = ''
+      @secret = ''
     end
   end
 end

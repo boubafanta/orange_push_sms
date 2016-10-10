@@ -4,69 +4,53 @@ require 'http'
 module OrangePushSMS
   class Message
 
-    BASE_URL     = 'https://gsm.orange.sn/push_flux/http.php'
-    BASE_URL_XML = 'http://213.154.64.47/push_flux/xml.php'
+    BASE_URL     = 'https://api.orangesmspro.sn:8443/api/xml'
 
     def initialize(options = {})
-      @msisdn   = options.fetch(:msisdn, '221770000000')
-      @wording  = options.fetch(:wording, '')
-      @tpoa     = options.fetch(:tpoa, 'Aphia')
-      @numbers  = options.fetch(:numbers, [])
-      @is_xml   = options.has_key?(:is_xml) and options.delete(:is_xml)
-      @campaign = 'TESTPUSH'
+      @recipients = options.fetch(:recipients, [])
+      @content    = options.fetch(:content, '')
+      @signature  = options.fetch(:signature, 'Aphia')
+      @subject    = options.fetch(:subject, '')
     end
 
-    def send
-      if @is_xml or @numbers.size > 0
-        xml = Nokogiri::XML HTTP.post( BASE_URL_XML, form: {xml: to_xml}).to_s
-        xml.xpath("//STATUS_CODE").first.text == "100"
-      else
-        !(/Return:1/ =~ HTTP.get(BASE_URL, params: to_h).to_s).nil?
-      end
+    def config
+      OrangePushSMS.configuration
     end
 
-    def to_h
-      pass = Digest::MD5.hexdigest(OrangePushSMS.configuration.pass)
-      {login: OrangePushSMS.configuration.login,
-       pass: pass,
-       tpoa: @tpoa,
-       msisdn: @msisdn,
-       wording: @wording,
-       campaign: @campaign}
+    def timestamp
+      @timestamp ||= Time.now.to_i
+    end
+
+    def digest
+      d = OpenSSL::Digest.new('sha1')
+      OpenSSL::HMAC.hexdigest d,
+                              config.secret,
+                              "#{config.token}#{to_xml}#{timestamp}"
     end
 
     def to_xml
-      pass = Digest::MD5.hexdigest(OrangePushSMS.configuration.pass)
-      builder = Nokogiri::XML::Builder.new do |xml|
-        xml.SESSION(login: OrangePushSMS.configuration.login, pass: pass) do
-          xml.CREATE do
-            xml.CAMPAIGN(type: '3') do
-              xml.NAME @campaign
-              xml.START DateTime.now.strftime('%Y-%m-%d-%H-%M')
-              xml.END DateTime.now.strftime('%Y-%m-%d-%H-%M')
-              xml.TPOA @tpoa
-              if @numbers.size > 0
-                xml.GEN do
-                  xml.WORDING @wording
-                  xml.NUMBERS do
-                    @numbers.each do |number|
-                      xml.NUMBER number
-                    end
-                  end
-                end
-              else
-                xml.PERSO do
-                  xml.MESSAGE do
-                    xml.NUMBER @msisdn
-                    xml.WORDING @wording
-                  end
-                end
-              end
+      @builder ||= Nokogiri::XML::Builder.new do |xml|
+        xml.session do
+          xml.type 1
+          xml.content @content
+          xml.recipients do
+            @recipients.each do |recipient|
+              xml.recipient recipient
             end
           end
+          xml.signature @signature
+          xml.subject @subject
         end
-      end
-      builder.to_xml
+      end.to_xml
+    end
+
+    def send
+      uri = "#{BASE_URL}?token=#{config.token}&key=#{digest}&timestamp=#{timestamp}"
+      ctx = OpenSSL::SSL::SSLContext.new
+      ctx.verify_mode = OpenSSL::SSL::VERIFY_NONE
+      xml = Nokogiri::XML HTTP.basic_auth(user: config.user, pass: config.token)
+                              .post(uri, body: to_xml, ssl_context: ctx)
+      puts xml
     end
   end
 end

@@ -24,26 +24,20 @@ In config/initializers create a file orange_push_sms.rb:
 
 ```ruby
 OrangePushSMS.configure do |config|
-	config.login = 'LOGIN'
-	config.pass  = 'PASSWORD'
+	config.user   = 'LOGIN'
+	config.token  = 'TOKEN'
+	config.secret = 'API KEY'
 end
 ```
 
 ## Usage
 
-To send an SMS to single recipient use:
+To send an SMS :
 
 ```ruby
-message = OrangePushSMS::Message.new msisdn: '22177XXXXXXX', wording: 'Your message here', tpoa: 'SENDER', is_xml: true
+message = OrangePushSMS::Message.new recipients: ['22177XXXXXXX'], content: 'Your message here', signature: 'SENDER', subject: 'Subject'
 message.send #returns true if successful 
 ```
-To multiple recipients
-
-```ruby
-message = OrangePushSMS::Message.new numbers: ['22177XXXXXXX', '22177YYYYYYY', '22176ZZZZZZZ'], wording: "Sending to multiple recipients", tpoa: 'SENDER'
-message.send
-```
-
 ## Contributing
 
 1. Fork it ( https://github.com/divinwind/orange_push_sms/fork )
